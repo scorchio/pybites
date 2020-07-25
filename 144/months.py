@@ -8,7 +8,7 @@ MONTHS_PER_YEAR = 12
 
 
 def calc_months_passed(year, month, day):
-    """Construct a date object from the passed in arguments.
+   """Construct a date object from the passed in arguments.
        If this fails due to bad inputs reraise the exception.
        Also if the new date is < START_DATE raise a ValueError.
 
@@ -28,5 +28,14 @@ def calc_months_passed(year, month, day):
        See the tests for more examples.
 
        Return the number of months passed int.
-    """
-    pass
+   """
+   try:
+       end_date = date(year, month, day)
+   except Exception as e:
+      raise e
+   if end_date < START_DATE:
+      raise ValueError()
+
+   delta = relativedelta(end_date, START_DATE)
+   extra_month = 1 if delta.days >= MIN_DAYS_TO_COUNT_AS_MONTH else 0
+   return delta.years * 12 + delta.months + extra_month
