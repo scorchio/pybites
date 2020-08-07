@@ -1,6 +1,6 @@
 {
     "python.testing.pytestArgs": [
-        "144"
+        "166"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
