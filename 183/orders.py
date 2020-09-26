@@ -30,14 +30,14 @@ def get_year_region_breakdown(df):
 def get_best_sales_rep(df):
     """Return a tuple of the name of the sales rep and
        the total of his/her sales"""
-    best_sales_df = df.groupby('Rep').sum('Total')
-    best = best_sales_df[best_sales_df.Total == best_sales_df.Total.max()]
+    best_sales_df = df.groupby('Rep').sum()
+    best = best_sales_df[best_sales_df['Total'] == best_sales_df['Total'].max()]
     return best.index.values[0], best['Total'].values[0]
 
 
 def get_most_sold_item(df):
     """Return a tuple of the name of the most sold item
        and the number of units sold"""
-    best_df = df.groupby('Item').sum('Units')
-    best = best_df[best_df.Total == best_df.Total.max()]
+    best_df = df.groupby('Item').sum()
+    best = best_df[best_df['Units'] == best_df['Units'].max()]
     return best.index.values[0], best['Units'].values[0]
