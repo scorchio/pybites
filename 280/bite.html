@@ -1,0 +1,14 @@
+<p>For this bite you are going to solve three different tasks,&nbsp;where each task becomes progressively more complicated.&nbsp;</p>
+<p>Use the <code>re</code> regular expression (RegEx) package from the beginning,&nbsp;as it should help you solve the final task.</p>
+<p>For the purposes of this bite, a character refers to a unicode-character and is <strong>not</strong> limited to alphanumeric symbols!</p>
+<h4>Task 1</h4>
+<p>The goal of <code>count_n_repetitions</code> is to count how often characters are followed by themselves for <strong>n</strong> times. A repetition of a character refers to a sequence of the same character, which is not interrupted by a different character: <code><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">AABA</span></code>: A is repeated once after the first A.</p>
+<h4>Task 2</h4>
+<p>The second function,&nbsp;<code><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">count_n_reps_or_chars_following</span></code> <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">should count </span>how often characters are repeated for <strong>n</strong> times, or followed by the given input character <strong>n</strong> times. If <code>char</code> is also followed by itself it only counts once.</p>
+<h4>Task 3</h4>
+<p>The final function, <code>check_surrounding_chars</code>, should count the number of times a character is surrounded by characters from the given&nbsp;<code><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">surrounding_chars</span></code><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">&nbsp;list.</span></p>
+<h4>Examples</h4>
+<p>To see a couple of example inputs and outputs, look at <a href="https://bites-data.s3.us-east-2.amazonaws.com/bite280-regex-examples.html" target="_blank" rel="noopener">this document</a>.</p>
+<h4>Error Handling</h4>
+<p>We assume all inputs use the correct types and valid values. You only need to focus on the regular expression. :)</p>
+<p><strong>Hint</strong> To quickly test out regular expression, websites like <a href="https://regex101.com/" target="_blank" rel="noopener">regex101</a> can help a lot (don't forget to set the RegEx flavor to <em>Python</em>).</p>
