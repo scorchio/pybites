@@ -1,5 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Tuple
+import heapq
 
 bites: List[int] = [283, 282, 281, 263, 255, 230, 216, 204, 197, 196, 195]
 names: List[str] = [
@@ -59,4 +60,27 @@ class Rankings:
             parameter indicating how many Ninjas to pair up
     returns List containing tuples of the paired up Ninja objects
     """
-    pass
+    heap: List[Ninja] = field(default_factory=list)
+
+    def __len__(self):
+        return len(self.heap)
+
+    def add(self, new_ninja: Ninja) -> None:
+        if new_ninja not in self.heap:
+            heapq.heappush(self.heap, new_ninja)
+
+    def dump(self) -> Ninja:
+        return heapq.heappop(self.heap)
+
+    def lowest(self, count: int = 1) -> List[Ninja]:
+        return heapq.nsmallest(count, self.heap)
+
+    def highest(self, count: int = 1) -> List[Ninja]:
+        return heapq.nlargest(count, self.heap)
+
+    def pair_up(self, count: int = 3) -> List[Tuple[Ninja, Ninja]]:
+        pairings = list(zip(
+            heapq.nlargest(count, self.heap),
+            heapq.nsmallest(count, self.heap)
+        ))
+        return pairings
