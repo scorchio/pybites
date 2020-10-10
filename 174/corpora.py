@@ -1,3 +1,4 @@
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import List, Set, Tuple
 import string
@@ -76,7 +77,10 @@ class Corpora:
 
         :return: List of tuples, i.e. ("word", count)
         """
-        pass
+        cleaned_non_stopwords = [word for word in self.cleaned.split() if word not in STOPWORDS]
+        word_counter = Counter(cleaned_non_stopwords)
+        most_common_words = word_counter.most_common(self.count)
+        return most_common_words
 
     @property
     def graph(self) -> None:
@@ -104,4 +108,6 @@ class Corpora:
         :param metrics: List of tuples with word counts
         :return: None
         """
-        pass
+        metrics = self.metrics
+        for word, count in metrics:
+            print(f'{word:>10} {self.tag:{self.tag}<{count}}')
