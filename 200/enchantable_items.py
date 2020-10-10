@@ -1,5 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
+from operator import attrgetter
 from pathlib import Path
 from typing import List
 from urllib.request import urlretrieve
@@ -71,7 +72,7 @@ class Item:
     def __str__(self):
         lines = []
         lines.append(f'{self.name.replace("_", " ").title()}: ')
-        for enchantment in self.enchantments:
+        for enchantment in sorted(self.enchantments, key=attrgetter('id_name')):
             lines.append(f'  {enchantment.short_str()}')
         result = '\n'.join(lines)
         return result
@@ -90,10 +91,11 @@ def generate_enchantments(soup):
         id_name = tds[0].find('em').get_text()
         max_level = ROMAN_TO_INT[tds[1].get_text()]
         description = tds[2].get_text()
-        raw_items = tds[4].find('img').get('data-src').split('/')[-1]
+        raw_items = tds[4].find('img').get('data-src').split('/')[-1].split('.')[0]
+        raw_items = f'_{raw_items}_'
         found_items = []
         for item in ITEMS:
-            if item in raw_items:
+            if f'_{item}_' in raw_items:
                 found_items.append(item)
         results[id_name] = Enchantment(id_name, name, max_level, description, found_items)
     return results
