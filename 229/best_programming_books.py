@@ -31,7 +31,11 @@ class Book:
     rating: float
 
     def __str__(self):
-        return f'[{self.rank:0>3}] {self.title} ({self.year})\n      {self.author} {self.rating}'
+        if self.rating == int(self.rating) or self.rating * 10 == int(self.rating * 10):
+            rating_str = f'{self.rating:.1f}'
+        else:
+            rating_str = f'{self.rating:.2f}'
+        return f'[{self.rank:0>3}] {self.title} ({self.year})\n      {self.author} {rating_str}'
 
 def _get_soup(file):
     return BeautifulSoup(file.read_text(), "html.parser")
