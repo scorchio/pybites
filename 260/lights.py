@@ -2,7 +2,7 @@ from typing import List
 
 import numpy as np
 import pandas as pd
-
+import re
 
 class LightsGrid:
 
@@ -21,12 +21,9 @@ class LightsGrid:
 
         Suggested return are 4 integers representing x1, x2, y1, y2 [hint]"""
         pass
-
-    def validate_grid(self):
-        """A helper function you might want to write to verify that:
-          - no lights are brighter than 5
-          - no lights are less than 0"""
-        pass
+        x1, y1 = s1.split(',')
+        x2, y2 = s2.split(',')
+        return int(x1), int(x2), int(y1), int(y2)
 
     def turn_on(self, s1: str, s2: str):
         """The turn_on function takes 2 parameters:
@@ -38,15 +35,12 @@ class LightsGrid:
           - If the light is already on, do nothing
           - If the light is off, turn it on at intensity 1
         """
-        # Process grid coordinates
-
-        # First extract the slice of the grid into a new dataframe
-
-        # Now create a mask of all lights == 0 in the slice
-
-        # # Now turn on all lights that are off
-
-        # Finally overwrite the grid with the new values
+        coords = self.process_grid_coordinates(s1, s2)
+        start = slice(coords[0], coords[1])
+        end = slice(coords[2], coords[3])
+        self.grid.loc[start,end] = self.grid.loc[start,end].apply(
+            lambda row: [1 if x == 0 else x for x in row]
+        )
 
     def turn_off(self, s1: str, s2: str):
         """The turn_off function takes 2 parameters:
@@ -55,7 +49,10 @@ class LightsGrid:
         :param s1: The bottom right hand corner of the grid to operate on
 
         Turn off all lights in the grid slice given."""
-        pass
+        coords = self.process_grid_coordinates(s1, s2)
+        start = slice(coords[0], coords[1])
+        end = slice(coords[2], coords[3])
+        self.grid.loc[start,end] = 0
 
     def turn_up(self, amount: int, s1: str, s2: str):
         """The turn_up function takes 3 parameters:
@@ -66,7 +63,12 @@ class LightsGrid:
 
         For each light in the grid slice given turn the light up
           by the given amount. Don't turn a light up past 5"""
-        pass
+        coords = self.process_grid_coordinates(s1, s2)
+        start = slice(coords[0], coords[1])
+        end = slice(coords[2], coords[3])
+        self.grid.loc[start,end] = self.grid.loc[start,end].apply(
+            lambda row: [min(5, x+amount) for x in row]
+        )
 
     def turn_down(self, amount: int, s1: str, s2: str):
         """The turn down function takes 3 parameters:
@@ -77,7 +79,12 @@ class LightsGrid:
 
         For each light in the grid slice given turn the light down
           by the given amount. Don't turn a light down past 0"""
-        pass
+        coords = self.process_grid_coordinates(s1, s2)
+        start = slice(coords[0], coords[1])
+        end = slice(coords[2], coords[3])
+        self.grid.loc[start,end] = self.grid.loc[start,end].apply(
+            lambda row: [max(0, x-amount) for x in row]
+        )
 
     def toggle(self, s1: str, s2: str):
         """The toggle function takes 2 parameters:
@@ -89,16 +96,12 @@ class LightsGrid:
           - If the light is on, turn it off
           - If the light is off, turn it on at intensity 3
         """
-        # Process grid coordinates
-
-        # First extract the slice of the grid into a new dataframe
-
-        # Now create a mask of all lights > 0 in the slice
-
-        # Now turn off all lights that are on in the slice
-        # Set all lights that are off to 3 in the slice
-
-        # Finally overwrite the grid with the new values
+        coords = self.process_grid_coordinates(s1, s2)
+        start = slice(coords[0], coords[1])
+        end = slice(coords[2], coords[3])
+        self.grid.loc[start,end] = self.grid.loc[start,end].apply(
+            lambda row: [0 if x > 0 else 3 for x in row] 
+        )
 
     def follow_instructions(self):
         """Function to process all instructions.
@@ -106,7 +109,20 @@ class LightsGrid:
         Each instruction should be processed in sequence,
           excluding the first instruction of course.
         """
-        pass
+        regex = re.compile(r'(?P<op>turn on|turn off|turn up|turn down|toggle) ((?P<amount>[0-9]+) )?(?P<from>[0-9]+,[0-9]+) through (?P<to>[0-9]+,[0-9]+)')
+
+        for instr in self.instructions:
+            match = regex.match(instr).groupdict()
+            if match['op'] == 'turn on':
+                self.turn_on(match['from'], match['to'])
+            if match['op'] == 'turn off':
+                self.turn_off(match['from'], match['to'])
+            if match['op'] == 'toggle':
+                self.toggle(match['from'], match['to'])
+            if match['op'] == 'turn up':
+                self.turn_up(int(match['amount']), match['from'], match['to'])
+            if match['op'] == 'turn down':
+                self.turn_down(int(match['amount']), match['from'], match['to'])
 
     @property
     def lights_intensity(self):
