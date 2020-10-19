@@ -4,7 +4,7 @@ import string
 
 import pytest
 
-from movies import MovieDb
+from pybites.exercise249.movies import MovieDb
 
 salt = ''.join(
     random.choice(string.ascii_lowercase) for i in range(20)

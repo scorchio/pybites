@@ -1,7 +1,7 @@
 from pandas.core.frame import DataFrame
 import pytest
 
-from movies import group_by_genre
+from pybites.exercise177.movies import group_by_genre
 
 
 @pytest.fixture(scope="module")
