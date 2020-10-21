@@ -43,9 +43,9 @@ class File:
             return None
         
         with open(self.path) as f:
-            lines = f.readlines()
+            contents = f.read()
 
-        return lines
+        return contents
 
 @dataclass
 class Web:
@@ -69,7 +69,8 @@ class Web:
         soup: -> Soup -- Parses the data from File and turns it into a BeautifulSoup
             object.
     """
-    pass
+    url: str
+    file: File
 
     @property
     def data(self) -> Optional[str]:
@@ -82,7 +83,10 @@ class Web:
         Returns:
             Optional[str] -- The string data from the File object.
         """
-        pass
+        if not self.file.data:
+            urlretrieve(self.url, self.file.path)
+        
+        return self.file.data
 
     @property
     def soup(self) -> Soup:
@@ -91,7 +95,8 @@ class Web:
         Returns:
             Soup -- BeautifulSoup object created from the File.
         """
-        pass
+        data = self.data
+        return Soup(data, 'html.parser')
 
 
 class Site(ABC):
@@ -136,8 +141,10 @@ class Site(ABC):
         Returns:
             str -- The html table
         """
-        pass
+        tables = self.web.soup.find_all('table')
+        return tables[loc]
 
+    @abstractmethod
     def parse_rows(self, table: Soup) -> List[Any]:
         """Abstract Method
         
@@ -153,6 +160,7 @@ class Site(ABC):
         """
         pass
 
+    @abstractmethod
     def polls(self, table: int = 0) -> List[Any]:
         """Abstract Method
 
@@ -172,6 +180,7 @@ class Site(ABC):
         """
         pass
 
+    @abstractmethod
     def stats(self, loc: int = 0):
         """Abstract Method
         
@@ -218,8 +227,7 @@ class RealClearPolitics(Site):
               Gabbard: 6.0
 
     """
-
-    pass
+    web: Web
 
     def parse_rows(self, table: Soup) -> List[Poll]:
         """Parses the row data from the html table.
@@ -232,7 +240,14 @@ class RealClearPolitics(Site):
             List[Poll] -- List of Poll namedtuples that were created from the
                 table data.
         """
-        pass
+        def _convert_td(td):
+            try:
+                return float(td)
+            except ValueError:
+                return td
+
+        polls = [Poll(*[_convert_td(td.text) for td in tr]) for tr in table.find_all('tr')[1:]]
+        return polls
 
     def polls(self, table: int = 0) -> List[Poll]:
         """Parses the data
@@ -249,7 +264,9 @@ class RealClearPolitics(Site):
             List[Poll] -- List of Poll namedtuples that were created from the
                 table data.
         """
-        pass
+        table = self.find_table(table)
+        polls = self.parse_rows(table)
+        return polls
 
     def stats(self, loc: int = 0):
         """Produces the stats from the polls.
@@ -257,9 +274,19 @@ class RealClearPolitics(Site):
         Keyword Arguments:
             loc {int} -- Formats the results from polls into a more user friendly
             representation.
-
         """
-        pass
+        polls = self.polls()
+        biden = sum([poll.Biden if isinstance(poll.Biden, float) else 0 for poll in polls])
+        sanders = sum([poll.Sanders if isinstance(poll.Sanders, float) else 0 for poll in polls])
+        gabbard = sum([poll.Gabbard if isinstance(poll.Gabbard, float) else 0 for poll in polls])
+
+        output = ("RealClearPolitics\n"
+                  "=================\n"
+                  f"    Biden: {biden}\n"
+                  f"  Sanders: {sanders}\n"
+                  f"  Gabbard: {gabbard}")
+
+        print(output)
 
 
 @dataclass
