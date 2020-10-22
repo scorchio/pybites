@@ -246,7 +246,13 @@ class RealClearPolitics(Site):
             except ValueError:
                 return td
 
-        polls = [Poll(*[_convert_td(td.text) for td in tr]) for tr in table.find_all('tr')[1:]]
+        def _poll_from_row(header_cells, tr):
+            data = [_convert_td(td.text) for td in tr]
+            poll_dict = {header_cells[i]: data[i] for i in range(len(data))}
+            return Poll(**poll_dict)
+
+        header_cells = [cell.text.strip() for cell in table.find_all('th')]
+        polls = [_poll_from_row(header_cells, tr) for tr in table.find_all('tr')[2:]]
         return polls
 
     def polls(self, table: int = 0) -> List[Poll]:
@@ -275,16 +281,18 @@ class RealClearPolitics(Site):
             loc {int} -- Formats the results from polls into a more user friendly
             representation.
         """
-        polls = self.polls()
+        polls = self.polls(loc)
         biden = sum([poll.Biden if isinstance(poll.Biden, float) else 0 for poll in polls])
         sanders = sum([poll.Sanders if isinstance(poll.Sanders, float) else 0 for poll in polls])
         gabbard = sum([poll.Gabbard if isinstance(poll.Gabbard, float) else 0 for poll in polls])
 
-        output = ("RealClearPolitics\n"
+        output = ("\n"
+                  "RealClearPolitics\n"
                   "=================\n"
                   f"    Biden: {biden}\n"
                   f"  Sanders: {sanders}\n"
-                  f"  Gabbard: {gabbard}")
+                  f"  Gabbard: {gabbard}"
+                  "\n")
 
         print(output)
 
@@ -340,7 +348,26 @@ class NYTimes(Site):
             List[LeaderBoard] -- List of LeaderBoard namedtuples that were created from
             the table data.
         """
-        pass
+
+        def _leaderboard_from_row(tr):
+            data = []
+            name = tr.find(class_='g-desktop')
+            if not name:
+                return None
+            data.append(name.text.strip())
+            data.extend([td.text.strip() for td in tr.find_all('td')[1:]])
+            if len(data) < 4:
+                return None
+            data[2] = int(data[2])
+            data[4] = int(data[4].replace('#', ''))
+            return LeaderBoard(*data)
+
+        leaderboards = [
+            _leaderboard_from_row(tr) 
+            for tr in table.find_all('tr')[1:] 
+            if _leaderboard_from_row(tr) is not None
+        ]
+        return leaderboards
 
     def polls(self, table: int = 0) -> List[LeaderBoard]:
         """Parses the data
@@ -357,7 +384,9 @@ class NYTimes(Site):
             List[LeaderBoard] -- List of LeaderBoard namedtuples that were created from
                 the table data.
         """
-        pass
+        table = self.find_table(table)
+        polls = self.parse_rows(table)
+        return polls
 
     def stats(self, loc: int = 0):
         """Produces the stats from the polls.
@@ -365,8 +394,29 @@ class NYTimes(Site):
         Keyword Arguments:
             loc {int} -- Formats the results from polls into a more user friendly
             representation.
+
+            NYTimes
+            =================================
+
+                            Pete Buttigieg
+            ---------------------------------
+            National Polling Average: 10%
+                Pledged Delegates: 25
+            Individual Contributions: $76.2m
+                Weekly News Coverage: 3
         """
-        pass
+        leaderboard = self.polls(loc)
+        for entry in leaderboard:
+            print ("\n"
+                   "NYTimes\n"
+                   "=================================\n"
+                   f"{entry.Candidate:>33}\n"
+                   "---------------------------------\n"
+                   f"National Polling Average: {entry.Average}\n"
+                   f"       Pledged Delegates: {entry.Delegates}\n"
+                   f"Individual Contributions: {entry.Contributions}\n"
+                   f"    Weekly News Coverage: {entry.Coverage}\n"
+                   "\n")
 
 
 def gather_data():
