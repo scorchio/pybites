@@ -1,0 +1,22 @@
+<p><a href="https://en.wikipedia.org/wiki/Graph_theory" target="_blank">Graph theory</a> is popular in Math and Computer Science. A graph is a set of V of vertices and a set of E of Edges, such that each edge in E connected two of the vertices in V.</p>
+
+<p>Vertices and edges can be labeled or unlabelled. When they are labeled, the number can be viewed as weight or distance depends on the context.</p>
+ 
+<p>It has a wide array of applications from social networking to neural network to engineering field. Today we are going to tackle one of the interesting and challenging graph bites.</p>
+
+<p>Given a dictionary of dictionaries that represent a major airline hub and its connecting cities and corresponding distance.</p>
+
+<p>Please find out the shortest path from city A to city B. You can assume there is always a route between these two cities. Example:<pre>
+hub = { 
+          'a': {'b': 2, 'c': 4, 'e': 1},
+          'b': {'a': 2, 'd': 3},
+          'c': {'a': 4, 'd': 6},
+          'd': {'c': 6, 'b': 3, 'e': 2},
+          'e': {'a': 1, 'd': 2},
+        }
+        
+>>> shortest_path(hub, 'a', 'd')
+        
+Expected result: cost and path:
+  (3, ['a', 'e', 'd'])
+</pre></p>
