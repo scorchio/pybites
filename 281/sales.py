@@ -1,5 +1,7 @@
+import base64
 import json
 import os
+from io import StringIO
 from pathlib import Path
 from typing import Dict, List, Union
 
@@ -41,6 +43,9 @@ def process_data(url: str) -> pd.DataFrame:
         pd.DataFrame: Pandas DataFrame generated from the processed data
     """
     data = get_data(url)
+    csv_content = base64.standard_b64decode(data['content']).decode("utf-8")
+    df = pd.read_csv(StringIO(str(csv_content)))
+    return df
 
 
 def summary_report(df: pd.DataFrame, stats: Union[List[str], None] = STATS) -> None:
@@ -101,10 +106,9 @@ def yearly_report(df: pd.DataFrame, year: int) -> None:
 
 
 # uncomment the following for viewing/testing the reports/code
-# if __name__ == "__main__":
-#     data = process_data(URL)
-#     summary_report(data)
-#     for year in (data["month"].dt.year).unique():
-#         yearly_report(data, year)
-
-#     yearly_report(data, 2020)
+if __name__ == "__main__":
+    data = process_data(URL)
+    summary_report(data)
+    for year in (data["month"].dt.year).unique():
+        yearly_report(data, year)
+    yearly_report(data, 2020)
