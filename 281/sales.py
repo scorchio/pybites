@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+from datetime import date
 from io import StringIO
 from pathlib import Path
 from typing import Dict, List, Union
@@ -48,6 +49,16 @@ def process_data(url: str) -> pd.DataFrame:
     return df
 
 
+def _date_to_year(value):
+    d = date.fromisoformat(value)
+    return d.year
+
+
+def _date_to_month(value):
+    d = date.fromisoformat(value)
+    return d.month
+
+
 def summary_report(df: pd.DataFrame, stats: Union[List[str], None] = STATS) -> None:
     """Summary report generated from the DataFrame and list of stats
 
@@ -68,7 +79,10 @@ def summary_report(df: pd.DataFrame, stats: Union[List[str], None] = STATS) -> N
         2015  608473.83  50706.152500   97237.42
         2016  733947.03  61162.252500  118447.83
     """
-    pass
+    df['year'] = df['month'].apply(_date_to_year)
+    result = df.groupby(['year']).agg({'sales': stats})
+    result.columns = stats  # reset multi-index into the given labels
+    print(result)
 
 
 def yearly_report(df: pd.DataFrame, year: int) -> None:
@@ -102,7 +116,14 @@ def yearly_report(df: pd.DataFrame, year: int) -> None:
         11     78628.72
         12     69545.62
     """
-    pass
+    df['year'] = df['month'].apply(_date_to_year)
+    df['month'] = df['month'].apply(_date_to_month)   
+    result = df[df.year == year].groupby(['month']).sum()[['sales']]
+    if len(result) == 0:
+        raise ValueError(f'The year {year} is not included in the report!')
+    print(year)
+    print()
+    print(result)
 
 
 # uncomment the following for viewing/testing the reports/code
