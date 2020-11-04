@@ -25,10 +25,16 @@ class BridgeHand:
         if not len(cards) == 13:
             raise ValueError('Number of cards must be 13')
 
+        self.hand = {
+            Suit.S: [],
+            Suit.H: [],
+            Suit.D: [],
+            Suit.C: [],
+        }
         for card in cards:
             if not isinstance(card, Card):
                 raise ValueError('All items in cards must be a Card type')
-
+            self.hand[card.suit].append(card)
 
 
     def __str__(self) -> str:
@@ -41,24 +47,40 @@ class BridgeHand:
         the suits with a single space.
         Note that a "10" should be represented with a capital 'T'
         """
+        output_parts = []
+        for suit, cards in self.hand.items():
+            if len(cards) == 0:
+                continue
+            
+            sorted_cards = list(sorted(cards, key=lambda card: card.rank.value))
+            card_values = ''.join([card.rank.name for card in sorted_cards])
+            output_parts.append(f'{suit.name}:{card_values}')
+        return ' '.join(output_parts)
 
     @property
     def hcp(self) -> int:
         """ Return the number of high card points contained in this hand """
 
+    def _num_of_suits_with_n_cards(self, n: int) -> int:
+        n_count = [1 if len(cards) == n else 0 for cards in self.hand.values()]
+        return sum(n_count)
+
     @property
     def doubletons(self) -> int:
         """ Return the number of doubletons contained in this hand """
+        return self._num_of_suits_with_n_cards(2)
 
     @property
     def singletons(self) -> int:
         """ Return the number of singletons contained in this hand """
+        return self._num_of_suits_with_n_cards(1)
 
     @property
     def voids(self) -> int:
         """ Return the number of voids (missing suits) contained in
             this hand
         """
+        return self._num_of_suits_with_n_cards(0)
 
     @property
     def ssp(self) -> int:
@@ -66,6 +88,10 @@ class BridgeHand:
             Doubletons are worth one point, singletons two points,
             voids 3 points
         """
+        points = 0
+        for count, point in SSP.items():
+            points += self._num_of_suits_with_n_cards(count)*point
+        return points
 
     @property
     def total_points(self) -> int:
