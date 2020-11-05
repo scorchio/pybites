@@ -60,6 +60,10 @@ class BridgeHand:
     @property
     def hcp(self) -> int:
         """ Return the number of high card points contained in this hand """
+        points = 0
+        for cards in self.hand.values():
+            points += sum([HCP.get(card.rank, 0) for card in cards])
+        return points
 
     def _num_of_suits_with_n_cards(self, n: int) -> int:
         n_count = [1 if len(cards) == n else 0 for cards in self.hand.values()]
@@ -96,9 +100,21 @@ class BridgeHand:
     @property
     def total_points(self) -> int:
         """ Return the total points (hcp and ssp) contained in this hand """
+        return self.hcp + self.ssp
 
     @property
     def ltc(self) -> int:
         """ Return the losing trick count for this hand - see bite description
             for the procedure
         """
+        not_losers = [Rank.A, Rank.K, Rank.Q]
+        points = 0
+        for cards in self.hand.values():
+            not_losers_to_check = not_losers[:len(cards)]
+            count_in_suit = 0
+            cards_rank = [card.rank for card in cards]
+            for rank in not_losers_to_check:
+                if rank in cards_rank:
+                    count_in_suit += 1
+            points += min(3, len(cards)) - count_in_suit
+        return points
