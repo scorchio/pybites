@@ -1,0 +1,94 @@
+import csv
+from collections import defaultdict
+from operator import itemgetter
+from typing import Union, List
+
+# Grabbed matrix from from
+# https://www.ncbi.nlm.nih.gov/Class/FieldGuide/BLOSUM62.txt
+# Fixed width of 3
+BLOSUM62 = """#  Matrix made by matblas from blosum62.iij
+#  * column uses minimum score
+#  BLOSUM Clustered Scoring Matrix in 1/2 Bit Units
+#  Blocks Database = /data/blocks_5.0/blocks.dat
+#  Cluster Percentage: >= 62
+#  Entropy =   0.6979, Expected =  -0.5209
+   A  R  N  D  C  Q  E  G  H  I  L  K  M  F  P  S  T  W  Y  V  B  Z  X  *
+A  4 -1 -2 -2  0 -1 -1  0 -2 -1 -1 -1 -1 -2 -1  1  0 -3 -2  0 -2 -1  0 -4
+R -1  5  0 -2 -3  1  0 -2  0 -3 -2  2 -1 -3 -2 -1 -1 -3 -2 -3 -1  0 -1 -4
+N -2  0  6  1 -3  0  0  0  1 -3 -3  0 -2 -3 -2  1  0 -4 -2 -3  3  0 -1 -4
+D -2 -2  1  6 -3  0  2 -1 -1 -3 -4 -1 -3 -3 -1  0 -1 -4 -3 -3  4  1 -1 -4
+C  0 -3 -3 -3  9 -3 -4 -3 -3 -1 -1 -3 -1 -2 -3 -1 -1 -2 -2 -1 -3 -3 -2 -4
+Q -1  1  0  0 -3  5  2 -2  0 -3 -2  1  0 -3 -1  0 -1 -2 -1 -2  0  3 -1 -4
+E -1  0  0  2 -4  2  5 -2  0 -3 -3  1 -2 -3 -1  0 -1 -3 -2 -2  1  4 -1 -4
+G  0 -2  0 -1 -3 -2 -2  6 -2 -4 -4 -2 -3 -3 -2  0 -2 -2 -3 -3 -1 -2 -1 -4
+H -2  0  1 -1 -3  0  0 -2  8 -3 -3 -1 -2 -1 -2 -1 -2 -2  2 -3  0  0 -1 -4
+I -1 -3 -3 -3 -1 -3 -3 -4 -3  4  2 -3  1  0 -3 -2 -1 -3 -1  3 -3 -3 -1 -4
+L -1 -2 -3 -4 -1 -2 -3 -4 -3  2  4 -2  2  0 -3 -2 -1 -2 -1  1 -4 -3 -1 -4
+K -1  2  0 -1 -3  1  1 -2 -1 -3 -2  5 -1 -3 -1  0 -1 -3 -2 -2  0  1 -1 -4
+M -1 -1 -2 -3 -1  0 -2 -3 -2  1  2 -1  5  0 -2 -1 -1 -1 -1  1 -3 -1 -1 -4
+F -2 -3 -3 -3 -2 -3 -3 -3 -1  0  0 -3  0  6 -4 -2 -2  1  3 -1 -3 -3 -1 -4
+P -1 -2 -2 -1 -3 -1 -1 -2 -2 -3 -3 -1 -2 -4  7 -1 -1 -4 -3 -2 -2 -1 -2 -4
+S  1 -1  1  0 -1  0  0  0 -1 -2 -2  0 -1 -2 -1  4  1 -3 -2 -2  0  0  0 -4
+T  0 -1  0 -1 -1 -1 -1 -2 -2 -1 -1 -1 -1 -2 -1  1  5 -2 -2  0 -1 -1  0 -4
+W -3 -3 -4 -4 -2 -2 -3 -2 -2 -3 -2 -3 -1  1 -4 -3 -2 11  2 -3 -4 -3 -2 -4
+Y -2 -2 -2 -3 -2 -1 -2 -3  2 -1 -1 -2 -1  3 -3 -2 -2  2  7 -1 -3 -2 -1 -4
+V  0 -3 -3 -3 -1 -2 -2 -3 -3  3  1 -2  1 -1 -2 -2  0 -3 -1  4 -3 -2 -1 -4
+B -2 -1  3  4 -3  0  1 -1  0 -3 -4  0 -3 -3 -2  0 -1 -4 -3 -3  4  1 -1 -4
+Z -1  0  0  1 -3  3  4 -2  0 -3 -3  1 -1 -3 -1  0 -1 -3 -2 -2  1  4 -1 -4
+X  0 -1 -1 -1 -2 -1 -1 -1 -1 -1 -1 -1 -1 -1 -2  0  0 -2 -1 -1 -1 -1 -1 -4
+* -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4  1 """
+
+class AminoAcidNotFoundError(KeyError):
+    pass
+
+
+def _load_matrix(matrix_str: str) -> dict:
+    lines = [line for line in matrix_str.splitlines() if line[0] != '#']
+    lines[0] = f'- {" ".join(lines[0].split())}'
+    lines = [' '.join(line.split()) for line in lines]
+    reader = csv.DictReader(lines, delimiter=' ')
+    matrix = defaultdict(dict)
+    for row in reader:
+        items = list(row.items())
+        amino1 = items[0][1]
+        for amino_score in items[1:]:
+            if not amino_score[0] or not amino_score[1]:
+                continue
+            matrix[amino1][amino_score[0]] = int(amino_score[1])
+        
+    return matrix
+
+
+def matrix_score(sequence1: str, sequence2: str, matrix_str: str = BLOSUM62) -> int:
+    """
+    Receives two proteins sequences and a matrix table
+    Returns the score of two proteins according to the supplied matrix table
+    """
+    score_matrix = _load_matrix(matrix_str)
+    score = 0
+    for amino1, amino2 in zip(sequence1, sequence2):
+        try:
+            score += score_matrix[amino1.upper()][amino2.upper()]
+        except KeyError:
+            raise AminoAcidNotFoundError(f'Scoring matrix does not support scoring for: (\'{amino1}\', \'{amino2}\')')
+    return score
+
+
+def closest_match(
+    reference_sequence: str, query_sequences: List[str], matrix_str: str = BLOSUM62
+) -> Union[str, List, None]:
+    """
+    Receives a reference sequence, a list of query sequences and a matrix table
+    Returns the closest matching sequence(s) or None
+    """
+    scores = [
+        (reference_sequence, query_sequence, matrix_score(reference_sequence, query_sequence))
+        for query_sequence in query_sequences
+    ]
+    if len(scores) == 0:
+        return None
+    max_score = max(scores, key=itemgetter(2))
+    max_sequences = [query_sequence for _, query_sequence, score in scores if score == max_score[2]]
+    if len(max_sequences) == 1:
+        return max_sequences[0]
+    return max_sequences 
