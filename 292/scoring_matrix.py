@@ -68,7 +68,9 @@ def matrix_score(sequence1: str, sequence2: str, matrix_str: str = BLOSUM62) -> 
     score = 0
     for amino1, amino2 in zip(sequence1, sequence2):
         try:
-            score += score_matrix[amino1.upper()][amino2.upper()]
+            current_score = score_matrix[amino1.upper()][amino2.upper()]
+            score += current_score
+            print(f'{amino1} <-> {amino2}: {current_score}')
         except KeyError:
             raise AminoAcidNotFoundError(f'Scoring matrix does not support scoring for: (\'{amino1}\', \'{amino2}\')')
     return score
@@ -82,7 +84,7 @@ def closest_match(
     Returns the closest matching sequence(s) or None
     """
     scores = [
-        (reference_sequence, query_sequence, matrix_score(reference_sequence, query_sequence))
+        (reference_sequence, query_sequence, matrix_score(reference_sequence, query_sequence, matrix_str))
         for query_sequence in query_sequences
     ]
     if len(scores) == 0:
