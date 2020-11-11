@@ -45,13 +45,34 @@ def four_day_weekends(
         ValueError: ERROR_MSG
     """
     candidates = _generate_staycation_candidates(year, start_month)
-    filtered = _filter_staycation_candidates(candidates)
-    pprint(filtered)
+    filtered_weekends = _filter_staycation_candidates(candidates)
+    base = _get_report_base(paid_time_off, filtered_weekends)
 
     if show_workdays:
         print(_generate_work_day_report())
     else:
-        print(_generate_four_day_weekend_report())
+        print(_generate_four_day_weekend_report(base))
+
+
+def _get_report_base(paid_time_off, filtered_weekends):
+    staycation_days = 0
+    weekends = []
+    running_out_triggered = False
+    pto_days_count = paid_time_off // 8
+    for start, end in filtered_weekends:
+        staycation_days += 2
+        running_out = staycation_days > pto_days_count and not running_out_triggered
+        weekends.append((start, end, running_out))
+        if staycation_days > pto_days_count:
+            running_out_triggered = True
+    balance_days = (pto_days_count - staycation_days) * -1
+
+    base = {
+        'pto_days_count': pto_days_count,
+        'balance_days_count': balance_days,
+        'weekends': weekends,
+    }
+    return base
 
 
 def _generate_staycation_candidates(year, start_month):
@@ -75,22 +96,12 @@ def _filter_staycation_candidates(candidates):
         is_federal_holiday = any(_is_date_between_datetimes(federal_holiday, friday, monday) for federal_holiday in FEDERAL_HOLIDAYS)
         if not is_federal_holiday:
             filtered.append((friday, monday))
-        else:
-            print(f'Between {friday} and {monday}, there is a holiday -> not a staycation')
+        # else:
+           # print(f'Between {friday} and {monday}, there is a holiday -> not a staycation')
     return filtered
 
 
-def _generate_four_day_weekend_report():
-    results = {
-        'four_day_weekends_count': 18,
-        'pto_days_count': 25,
-        'balance_days_count': 11,
-        'weekends': [
-            ('2020-08-07', '2020-08-10', False),
-            ('2020-09-18', '2020-09-21', True),
-            ('2020-12-18', '2020-12-21', False),
-        ],
-    }
+def _generate_four_day_weekend_report(results):
     results['pto_count'] = results['pto_days_count'] * 8
     results['balance_count'] = results['balance_days_count'] * -8
     output = _get_four_day_weekend_output(results)
@@ -99,7 +110,8 @@ def _generate_four_day_weekend_report():
 
 def _get_four_day_weekend_output(results):
     line_width = 24
-    header_line_text = f'{results["four_day_weekends_count"]} Four-Day Weekends'
+    weekends_count = len(results['weekends'])
+    header_line_text = f'{weekends_count} Four-Day Weekends'
     header_line = f'{header_line_text:^{line_width}}'
     separator = '=' * line_width 
     pto_line = f'{"PTO: ":>9} {results["pto_count"]:>3} ({results["pto_days_count"]} days)'
@@ -113,7 +125,9 @@ def _get_four_day_weekend_output(results):
 def _get_weekend_lines(weekends):
     weekend_lines = []
     for start, end, is_last_chance in weekends:
-        line = f'{start} - {end} *' if is_last_chance else f'{start} - {end}'
+        start_date = start.date()
+        end_date = end.date()
+        line = f'{start_date} - {end_date} *' if is_last_chance else f'{start_date} - {end_date}'
         weekend_lines.append(line)
     return weekend_lines
 
