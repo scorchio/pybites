@@ -44,6 +44,9 @@ def four_day_weekends(
     Raises:
         ValueError: ERROR_MSG
     """
+    if isinstance(start_month, bool):
+        raise ValueError(ERROR_MSG)
+
     candidates = _generate_staycation_candidates(year, start_month)
     filtered_weekends = _filter_staycation_candidates(candidates)
     base = _get_report_base(paid_time_off, filtered_weekends)
@@ -57,15 +60,15 @@ def four_day_weekends(
 def _get_report_base(paid_time_off, filtered_weekends):
     staycation_days = 0
     weekends = []
-    running_out_triggered = False
     pto_days_count = paid_time_off // 8
     for start, end in filtered_weekends:
         staycation_days += 2
-        running_out = staycation_days > pto_days_count and not running_out_triggered
-        weekends.append((start, end, running_out))
-        if staycation_days > pto_days_count:
-            running_out_triggered = True
+        weekends.append((start, end, False))
     balance_days = (pto_days_count - staycation_days) * -1
+    first_weekend_idx_not_to_skip = balance_days // 2
+
+    start, end, _ = weekends[first_weekend_idx_not_to_skip]
+    weekends[first_weekend_idx_not_to_skip] = (start, end, True)
 
     base = {
         'pto_days_count': pto_days_count,
