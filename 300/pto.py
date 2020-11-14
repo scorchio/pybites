@@ -63,14 +63,18 @@ def _get_report_base(year, start_month, paid_time_off, filtered_weekends):
     staycation_days = []
     pto_days_count = paid_time_off // 8
     for start, end in filtered_weekends:
-        staycation_days_count += 2
+        if start.date not in FEDERAL_HOLIDAYS:
+            staycation_days_count += 1
+        if end.date not in FEDERAL_HOLIDAYS:
+            staycation_days_count += 1
         weekends.append((start, end, False))
         staycation_days.extend([start, end])
+
     balance_days = (pto_days_count - staycation_days_count) * -1
     first_weekend_idx_not_to_skip = balance_days // 2
-
-    start, end, _ = weekends[first_weekend_idx_not_to_skip]
-    weekends[first_weekend_idx_not_to_skip] = (start, end, True)
+    if first_weekend_idx_not_to_skip >= 0:
+        start, end, _ = weekends[first_weekend_idx_not_to_skip]
+        weekends[first_weekend_idx_not_to_skip] = (start, end, True)
     
     workdays = _generate_work_days(year, start_month, staycation_days)
 
