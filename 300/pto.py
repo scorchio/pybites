@@ -48,8 +48,8 @@ def four_day_weekends(
         raise ValueError(ERROR_MSG)
 
     candidates = _generate_staycation_candidates(year, start_month)
-    filtered_weekends = _filter_staycation_candidates(candidates)
-    base = _get_report_base(year, start_month, paid_time_off, filtered_weekends)
+    weekends_without_federal_holidays = _filter_federal_holidays(candidates)
+    base = _get_report_base(year, start_month, paid_time_off, weekends_without_federal_holidays)
 
     if show_workdays:
         print(_generate_work_day_report(base))
@@ -57,25 +57,30 @@ def four_day_weekends(
         print(_generate_four_day_weekend_report(base))
 
 
-def _get_report_base(year, start_month, paid_time_off, filtered_weekends):
+def _get_report_base(year, start_month, paid_time_off, weekends_without_federal_holidays):
     staycation_days_count = 0
     weekends = []
     staycation_days = []
     pto_days_count = paid_time_off // 8
-    for start, end in filtered_weekends:
-        if start.date not in FEDERAL_HOLIDAYS:
+    last_chance_was_displayed = False
+    start_date = datetime(year, start_month, 1)
+    for start, end in reversed(weekends_without_federal_holidays):
+        if start < start_date:
             staycation_days_count += 1
-        if end.date not in FEDERAL_HOLIDAYS:
-            staycation_days_count += 1
-        weekends.append((start, end, False))
-        staycation_days.extend([start, end])
+            staycation_days.append(end)
+        else:
+            staycation_days_count += 2
+            staycation_days.extend([end, start])
+        last_chance = staycation_days_count >= pto_days_count and not last_chance_was_displayed
+        if start >= start_date:
+            weekends.append((start, end, last_chance))
+        if last_chance:
+            last_chance_was_displayed = True
 
+    staycation_days.reverse()
+    weekends.reverse()
     balance_days = (pto_days_count - staycation_days_count) * -1
-    first_weekend_idx_not_to_skip = balance_days // 2
-    if first_weekend_idx_not_to_skip >= 0:
-        start, end, _ = weekends[first_weekend_idx_not_to_skip]
-        weekends[first_weekend_idx_not_to_skip] = (start, end, True)
-    
+
     workdays = _generate_work_days(year, start_month, staycation_days)
 
     base = {
@@ -104,9 +109,9 @@ def _generate_work_days(year, start_month, staycation_days):
 
 
 def _generate_staycation_candidates(year, start_month):
-    start_date = datetime(year, start_month, 1)
-    last_date = datetime(year, 12, 31)
     friday_to_monday = timedelta(days=3)
+    start_date = datetime(year, start_month, 1) - friday_to_monday
+    last_date = datetime(year, 12, 31)
     fridays = rrule(freq=WEEKLY, byweekday=FR, 
                     dtstart=start_date, until=last_date)
     mondays = rrule(freq=WEEKLY, byweekday=MO, 
@@ -115,7 +120,7 @@ def _generate_staycation_candidates(year, start_month):
     return candidates
 
 
-def _filter_staycation_candidates(candidates):
+def _filter_federal_holidays(candidates):
     filtered = []
     for friday, monday in candidates:
         is_federal_holiday = (
