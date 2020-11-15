@@ -58,34 +58,27 @@ def four_day_weekends(
 
 
 def _get_report_base(year, start_month, paid_time_off, weekends_without_federal_holidays):
-    staycation_days_count = 0
     weekends = []
     staycation_days = []
     pto_days_count = paid_time_off // 8
     last_chance_was_displayed = False
     start_date = datetime(year, start_month, 1)
     for start, end in reversed(weekends_without_federal_holidays):
-        if start < start_date:
-            staycation_days_count += 1
-            staycation_days.append(end)
-        else:
-            staycation_days_count += 2
-            staycation_days.extend([end, start])
-        last_chance = staycation_days_count >= pto_days_count and not last_chance_was_displayed
-        if start >= start_date:
-            weekends.append((start, end, last_chance))
+        staycation_days.extend([end, start])
+        last_chance = len(staycation_days) > pto_days_count and not last_chance_was_displayed
+        weekends.append((start, end, last_chance))
         if last_chance:
             last_chance_was_displayed = True
 
     staycation_days.reverse()
     weekends.reverse()
-    balance_days = (pto_days_count - staycation_days_count) * -1
+    balance_days = abs(pto_days_count - len(staycation_days))
 
     workdays = _generate_work_days(year, start_month, staycation_days)
 
     base = {
         'pto_days_count': pto_days_count,
-        'balance_days_count': abs(balance_days),
+        'balance_days_count': balance_days,
         'workdays': workdays,
         'weekends': weekends,
     }
@@ -104,13 +97,15 @@ def _generate_work_days(year, start_month, staycation_days):
             day.date() not in FEDERAL_HOLIDAYS
         )
         if is_workday:
+            print(f'{day.date()} ({day.weekday()}) | staycation: {day in staycation_days} | at home: {day.weekday() in AT_HOME} | federal holiday: {day.date() in FEDERAL_HOLIDAYS}')
             workdays.append(day)
+        
     return workdays
 
 
 def _generate_staycation_candidates(year, start_month):
     friday_to_monday = timedelta(days=3)
-    start_date = datetime(year, start_month, 1) - friday_to_monday
+    start_date = datetime(year, start_month, 1)
     last_date = datetime(year, 12, 31)
     fridays = rrule(freq=WEEKLY, byweekday=FR, 
                     dtstart=start_date, until=last_date)
@@ -185,4 +180,4 @@ def _get_work_day_output(results):
 
 
 if __name__ == "__main__":
-    four_day_weekends(show_workdays=False, year=2020)
+    four_day_weekends(show_workdays=True)
