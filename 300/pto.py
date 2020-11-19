@@ -97,7 +97,6 @@ def _generate_work_days(year, start_month, staycation_days):
             day.date() not in FEDERAL_HOLIDAYS
         )
         if is_workday:
-            print(f'{day.date()} ({day.weekday()}) | staycation: {day in staycation_days} | at home: {day.weekday() in AT_HOME} | federal holiday: {day.date() in FEDERAL_HOLIDAYS}')
             workdays.append(day)
         
     return workdays
