@@ -50,7 +50,8 @@ class DB:
     """
 
     def __init__(self, location: Optional[str] = ":memory:"):
-        raise NotImplementedError("You have to implement this method first.")
+        self.location = location
+        self.table_schemas = {}
 
     def __enter__(self):
         self.connection = sqlite3.connect(self.location)
@@ -85,7 +86,9 @@ class DB:
         Raises:
             SchemaError: If the given primary key is not part of the schema.
         """
-        raise NotImplementedError("You have to implement this method first.")
+        self.table_schemas[table] = schema
+        fields = ', '.join([f'{name} {sqlitetype.name}' for name, sqlitetype in schema])
+        self.cursor.execute(f'create table {table} ({fields}, primary key ({primary_key}))')
 
     def delete(self, table: str, target: Tuple[str, Any]):
         """Deletes rows from the table.
@@ -127,7 +130,16 @@ class DB:
             SchemaError: If a value does not respect the table schema or
                 if there are more values than columns for the given table.
         """
-        raise NotImplementedError("You have to implement this method first.")
+        num_columns_in_schema = len(self.table_schemas[table])
+        for record in values:
+            if len(record) != num_columns_in_schema:
+                raise SchemaError(f"Table {table} expects items with {num_columns_in_schema} values.")
+            for value, expected_type in zip(record, [col_type for _, col_type in self.table_schemas[table]]):
+                if not isinstance(value, expected_type.value):
+                    raise SchemaError(f"Column {column} expects values of type {expected_type.name}.")
+        
+        self.cursor.executemany(f"insert into {table} values (?)", values)
+
 
     def select(
         self,
@@ -172,4 +184,4 @@ class DB:
         Returns:
             int: Returns the total number of database rows that have been modified.
         """
-        raise NotImplementedError("You have to implement this method first.")
+        return 0
