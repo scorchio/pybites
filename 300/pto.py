@@ -118,8 +118,8 @@ def _filter_federal_holidays(candidates):
     filtered = []
     for friday, monday in candidates:
         is_federal_holiday = (
-            friday.date() in FEDERAL_HOLIDAYS or
-            monday.date() in FEDERAL_HOLIDAYS
+            friday.date() in FEDERAL_HOLIDAYS # or
+            # monday.date() in FEDERAL_HOLIDAYS
         )
         if not is_federal_holiday:
             filtered.append((friday, monday))

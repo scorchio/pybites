@@ -52,6 +52,9 @@ class DB:
     def __init__(self, location: Optional[str] = ":memory:"):
         self.location = location
         self.table_schemas = {}
+        self.connection = None
+        self.cursor = None
+        self.transactions = 0
 
     def __enter__(self):
         self.connection = sqlite3.connect(self.location)
@@ -86,6 +89,9 @@ class DB:
         Raises:
             SchemaError: If the given primary key is not part of the schema.
         """
+        fields = [field_name for field_name, field_type in schema]
+        if primary_key not in fields:
+            raise SchemaError("The provided primary key must be part of the schema.")
         self.table_schemas[table] = schema
         fields = ', '.join([f'{name} {sqlitetype.name}' for name, sqlitetype in schema])
         self.cursor.execute(f'create table {table} ({fields}, primary key ({primary_key}))')
@@ -100,7 +106,7 @@ class DB:
                 wanted to remove the row(s) with the year 1999, you would pass it
                 ("year", 1999). Only supports "=" operator in this bite.
         """
-        raise NotImplementedError("You have to implement this method first.")
+        self.cursor.execute(f'delete from {table} where {target[0]} == {target[1]}')
 
     def insert(self, table: str, values: List[Tuple]):
         """Inserts one or multiple new records into the database.
@@ -134,11 +140,15 @@ class DB:
         for record in values:
             if len(record) != num_columns_in_schema:
                 raise SchemaError(f"Table {table} expects items with {num_columns_in_schema} values.")
-            for value, expected_type in zip(record, [col_type for _, col_type in self.table_schemas[table]]):
+            for value, (col_name, expected_type) in zip(record, self.table_schemas[table]):
                 if not isinstance(value, expected_type.value):
-                    raise SchemaError(f"Column {column} expects values of type {expected_type.name}.")
+                    raise SchemaError(f"Column {col_name} expects values of type {expected_type.value.__name__}.")
         
-        self.cursor.executemany(f"insert into {table} values (?)", values)
+        fields = ', '.join([field_name for field_name, _ in self.table_schemas[table]])
+        qmarks = ', '.join('?' * len(self.table_schemas[table]))
+        query = f"insert into {table}({fields}) values ({qmarks})"
+        self.cursor.executemany(query, values)
+        self.transactions += len(values)
 
 
     def select(
@@ -164,6 +174,7 @@ class DB:
         Returns:
             list: The output returned from the sql command
         """
+        fields = ', '.join([field_name for field_name, _ in self.table_schemas[table]])
         raise NotImplementedError("You have to implement this method first.")
 
     def update(self, table: str, new_value: Tuple[str, Any], target: Tuple[str, Any]):
@@ -184,4 +195,4 @@ class DB:
         Returns:
             int: Returns the total number of database rows that have been modified.
         """
-        return 0
+        return self.transactions
