@@ -92,7 +92,7 @@ class DB:
         fields = [field_name for field_name, field_type in schema]
         if primary_key not in fields:
             raise SchemaError("The provided primary key must be part of the schema.")
-        self.table_schemas[table] = schema
+        self.table_schemas[table] = {column_name: column_type for column_name, column_type in schema}
         fields = ', '.join([f'{name} {sqlitetype.name}' for name, sqlitetype in schema])
         self.cursor.execute(f'create table {table} ({fields}, primary key ({primary_key}))')
 
@@ -106,7 +106,11 @@ class DB:
                 wanted to remove the row(s) with the year 1999, you would pass it
                 ("year", 1999). Only supports "=" operator in this bite.
         """
-        self.cursor.execute(f'delete from {table} where {target[0]} == {target[1]}')
+        filter_col_name = target[0]
+        query = f'delete from {table} where {filter_col_name} = :filter_value'
+        self.cursor.execute(query, {
+            "filter_value": target[1],
+        })
 
     def insert(self, table: str, values: List[Tuple]):
         """Inserts one or multiple new records into the database.
@@ -136,19 +140,19 @@ class DB:
             SchemaError: If a value does not respect the table schema or
                 if there are more values than columns for the given table.
         """
-        num_columns_in_schema = len(self.table_schemas[table])
+        num_columns_in_schema = len(self.table_schemas[table].keys())
         for record in values:
             if len(record) != num_columns_in_schema:
                 raise SchemaError(f"Table {table} expects items with {num_columns_in_schema} values.")
-            for value, (col_name, expected_type) in zip(record, self.table_schemas[table]):
+            for value, (col_name, expected_type) in zip(record, self.table_schemas[table].items()):
                 if not isinstance(value, expected_type.value):
                     raise SchemaError(f"Column {col_name} expects values of type {expected_type.value.__name__}.")
         
-        fields = ', '.join([field_name for field_name, _ in self.table_schemas[table]])
+        fields = ', '.join(self.table_schemas[table].keys())
         qmarks = ', '.join('?' * len(self.table_schemas[table]))
         query = f"insert into {table}({fields}) values ({qmarks})"
         self.cursor.executemany(query, values)
-        self.transactions += len(values)
+        self.transactions += self.cursor.rowcount
 
 
     def select(
@@ -174,8 +178,16 @@ class DB:
         Returns:
             list: The output returned from the sql command
         """
-        fields = ', '.join([field_name for field_name, _ in self.table_schemas[table]])
-        raise NotImplementedError("You have to implement this method first.")
+        if target and len(target) == 2:
+            target = (target[0], "=", target[1])
+        cols = ', '.join(columns) if columns else '*'
+        query = f'select {cols} from {table}'
+        params = {}
+        if target:
+            filter_column, filter_operator, filter_value = target
+            query = f'{query} where {filter_column} {filter_operator} :filter_value'
+            params["filter_value"] = filter_value
+        return self.cursor.execute(query, params).fetchall()
 
     def update(self, table: str, new_value: Tuple[str, Any], target: Tuple[str, Any]):
         """Update a record in the database.
@@ -186,7 +198,12 @@ class DB:
                 if you wanted to change "year" to 2001 you would pass it ("year", 2001).
             target (tuple): The row/record to modify. Example ("year", 1991)
         """
-        raise NotImplementedError("You have to implement this method first.")
+        query = f'update {table} set {new_value[0]} = :new_value where {target[0]} = :filter_value'
+        self.cursor.execute(query, {
+            'new_value': new_value[1],
+            'filter_value': target[1],
+        })
+        self.transactions += self.cursor.rowcount
 
     @property
     def num_transactions(self) -> int:
