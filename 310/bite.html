@@ -1,0 +1,19 @@
+<p>In this bite you will write a function that pairs filenames with each other. This is useful in the bioinformatics field, as some of the current&nbsp;<a href="https://support.illumina.com/help/BaseSpace_OLH_009008/Content/Source/Informatics/BS/NamingConvention_FASTQ-files-swBS.htm">sequencing technologies</a>&nbsp;produce two paired files for each sample which need to be processed together.</p>
+<p>The filenames have the following naming scheme:</p>
+<p><strong>File 1:</strong> <code>SampleName_S1_L001_<strong>R1</strong>_001.fastq.gz</code></p>
+<p><strong>File 2</strong>: <code>SampleName_S1_L001_<strong>R2</strong>_001.fastq.gz</code></p>
+<p><strong>A pair always consists of an <code>R1</code> and <code>R2</code>&nbsp;file.</strong></p>
+<p>The SampleName and all numbers are variable but the overall structure is always the same:</p>
+<div>- <code>SampleName</code> can contain letters, number or special characters (including <code>_</code>)</div>
+<div>- The number following <code>S</code>&nbsp;runs from <em>1</em>&nbsp;to <em>99</em></div>
+<div>- The number following <code>L</code>&nbsp;runs from <em>001</em>&nbsp;to <em>999</em></div>
+<div>- <code>R1</code>&nbsp;stands for file 1 and <code>R2</code>&nbsp;for file 2 of a pair (no other numbers are allowed)</div>
+<div>- The last number block runs from <em>001</em>&nbsp;to <em>999</em></div>
+<div>- The file name extension should end in <code>fastq.gz</code> (no extra extensions such as <code>fastq.gz.md5</code>)</div>
+<h3>Your task</h3>
+<div>- Write a function <code>pair_files(filenames)</code> that receives a list of filenames and&nbsp;returns a list of tuples, where each tuple contains pairs of filenames in the following order <code>(filename1-R1, filename2-R2)</code></div>
+<div>- Ignore filenames that do not match the naming scheme (even if they contain <code>R1</code>&nbsp;and <code>R2</code>)</div>
+<div>- Matching the filenames shoulb be case insensitive but the function should return the correct case in the filename pairs</div>
+<div>- For the tests presented here, you can assume that there is at most one file that can be paired with another (no higher tuplets)</div>
+<h3>Example</h3>
+<pre># Two complete pairs, one file without partner<br />&gt;&gt;&gt; filenames = [<br />  "Sample1_S1_L001_R1_001.FASTQ.GZ", "Sample1_S1_L001_R2_001.fastq.gz",<br />  "Sample2_S2_L001_R1_001.fastq.gz", "sample2_s2_l001_r2_001.fastq.gz",<br />  "Sample3_S3_L001_R1_001.fastq.gz",<br />]<br />&gt;&gt;&gt; pair_files(filenames) <br />[('Sample1_S1_L001_R1_001.FASTQ.GZ', 'Sample1_S1_L001_R2_001.fastq.gz'),<br />&nbsp;('Sample2_S2_L001_R1_001.fastq.gz', 'sample2_s2_l001_r2_001.fastq.gz')]</pre>
