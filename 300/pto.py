@@ -2,6 +2,7 @@ from dateutil.rrule import DAILY, FR, MO, WEEKLY, rrule
 from datetime import date, datetime, timedelta
 from pprint import pprint
 import calendar
+import math
 
 
 ERROR_MSG = (
@@ -49,7 +50,7 @@ def four_day_weekends(
 
     candidates = _generate_staycation_candidates(year, start_month)
     weekends_without_federal_holidays = _filter_federal_holidays(candidates)
-    base = _get_report_base(year, start_month, paid_time_off, candidates, weekends_without_federal_holidays)
+    base = _get_report_base(year, start_month, paid_time_off, weekends_without_federal_holidays)
 
     if show_workdays:
         print(_generate_work_day_report(base))
@@ -57,30 +58,30 @@ def four_day_weekends(
         print(_generate_four_day_weekend_report(base))
 
 
-def _get_report_base(year, start_month, paid_time_off, candidate_weekends, weekends_without_federal_holidays):
+def _get_report_base(year, start_month, paid_time_off, weekends_without_federal_holidays):
     weekends = []
     staycation_days = []
     pto_days_count = paid_time_off // 8
     last_chance_was_displayed = False
     start_date = datetime(year, start_month, 1)
+    balance_days = abs(pto_days_count - len(weekends_without_federal_holidays) * 2)
     for start, end in reversed(weekends_without_federal_holidays):
         staycation_days.extend([end, start])
-        last_chance = len(staycation_days) > pto_days_count and not last_chance_was_displayed
+        last_chance = (
+            len(staycation_days) >= pto_days_count and
+            not last_chance_was_displayed
+        )
         weekends.append((start, end, last_chance))
         if last_chance:
             last_chance_was_displayed = True
 
-    staycation_candidate_days = []
-    for start, end in candidate_weekends:
-        staycation_candidate_days.extend([start, end])
-
     staycation_days.reverse()
     weekends.reverse()
-    balance_days = abs(pto_days_count - len(staycation_days))
 
-    workdays = _generate_work_days(year, start_month, staycation_candidate_days)
+    workdays = _generate_work_days(year, start_month, staycation_days)
 
     base = {
+        'paid_time_off': paid_time_off,
         'pto_days_count': pto_days_count,
         'balance_days_count': balance_days,
         'workdays': workdays,
@@ -98,11 +99,9 @@ def _generate_work_days(year, start_month, staycation_days):
         friday_to_monday = timedelta(days=3)
         monday_if_this_was_friday = day + friday_to_monday
         is_workday = (
-            (
-                day not in staycation_days or
-                (day in staycation_days and day.weekday() == FR and monday_if_this_was_friday in FEDERAL_HOLIDAYS)
-            ) and
-            day.weekday() not in AT_HOME
+            day not in staycation_days and
+            day.weekday() not in AT_HOME and
+            day.date() not in FEDERAL_HOLIDAYS
         )
         if is_workday:
             workdays.append(day)
@@ -137,7 +136,6 @@ def _filter_federal_holidays(candidates):
 
 
 def _generate_four_day_weekend_report(results):
-    results['pto_count'] = results['pto_days_count'] * 8
     results['balance_count'] = results['balance_days_count'] * -8
     output = _get_four_day_weekend_output(results)
     return output
@@ -149,7 +147,7 @@ def _get_four_day_weekend_output(results):
     header_line_text = f'{weekends_count} Four-Day Weekends'
     header_line = f'{header_line_text:^{line_width}}'
     separator = '=' * line_width 
-    pto_line = f'{"PTO: ":>9} {results["pto_count"]:>3} ({results["pto_days_count"]} days)'
+    pto_line = f'{"PTO: ":>9} {results["paid_time_off"]:>3} ({results["pto_days_count"]} days)'
     balance_line = f'{"BALANCE: ":>9} {results["balance_count"]:>2} ({results["balance_days_count"]} days)'   
     output_lines = [header_line, separator, pto_line, balance_line, '']
     output_lines.extend(_get_weekend_lines(results['weekends']))
@@ -178,7 +176,7 @@ def _generate_work_day_report(base):
 
 
 def _get_work_day_output(results):
-    header_line = f'Remaining work days: {results["remaining_work"]} ({results["remaining_work_days"]} days)'
+    header_line = f'Remaining Work Days: {results["remaining_work"]} ({results["remaining_work_days"]} days)'
     output_lines = [header_line]
     days = [str(day.date()) for day in results['days']]
     output_lines.extend(days)

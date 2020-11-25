@@ -108,15 +108,15 @@ def test_last_chance_with_tiny_nonfullday_pto(capfd):
 
 
 def test_number_of_workdays_with_default(default_workdays_output):
-    assert "(23 days)" in default_workdays_output[0]
+    assert "(25 days)" in default_workdays_output[0]
 
 
 def test_number_of_workdays_with_october(october_workdays_output):
-    assert "(14 days)" in october_workdays_output[0]
+    assert "(15 days)" in october_workdays_output[0]
 
 
 def test_random_october_workday(october_workdays_output):
-    assert october_workdays_output[10] == "2020-12-10"
+    assert october_workdays_output[3] == "2020-10-09"
 
 
 def test_random_october_weekend_off(october_output):
