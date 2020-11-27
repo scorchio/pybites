@@ -1,0 +1,10 @@
+<p>You have received a list of DNA sequences for a specific gene in the <a href="https://en.wikipedia.org/wiki/FASTA_format" target="_blank" rel="noopener">FASTA file format</a>&nbsp;(see <a href="../../../298/" target="_blank" rel="noopener">Bite 298</a>).</p>
+<p>Your job is to collapse this FASTA file to a new FASTA file which contains only unique gene sequences and the headers for each entry are changed accordingly.</p>
+<p>To make things more interesting the function not only accepts FASTA files but also gzipped FASTA files.</p>
+<p>Watch out for edge cases as specified in the tests.</p>
+<h3>Example</h3>
+<p><code>convert_to_unique_genes("input.fasta", "output.fasta")</code></p>
+<p><strong>input.fasta</strong></p>
+<pre>&gt;gene [locus_tag=AA11]<br />AAAAAA<br />&gt;gene [locus_tag=BB22]<br />AAAAAA<br />&gt;gene [locus_tag=CC33]<br />GAAAAC</pre>
+<p><strong>output.fasta</strong></p>
+<pre>&gt;gene [locus_tags=AA11,BB22]<br />AAAAAA<br />&gt;gene [locus_tag=CC33]<br />GAAAAC</pre>
