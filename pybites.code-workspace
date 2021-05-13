@@ -3,5 +3,10 @@
 		{
 			"path": "."
 		}
-	]
+    ],
+    "settings": {
+        "python.analysis.diagnosticSeverityOverrides": {
+            "reportMissingImports": "none"
+        }
+    }
 }
